@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Main {
     public static void main(String[] args) {
@@ -11,9 +13,26 @@ public class Main {
 
         System.out.print("Inserisci la lunghezza del percorso (in metri): ");
         int lunghezzaPercorso = input.nextInt();
-        input.nextLine(); // pulisce il buffer
+        input.nextLine(); // pulisce buffer
 
-        // ArrayList di cavalli
+        // FileChooser per scegliere dove salvare il file
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Scegli dove salvare il risultato della gara");
+        chooser.setSelectedFile(new java.io.File("risultato_gara.txt"));
+        chooser.setFileFilter(new FileNameExtensionFilter("File di testo", "txt"));
+
+        int scelta = chooser.showSaveDialog(null);
+        if (scelta != JFileChooser.APPROVE_OPTION) {
+            System.out.println("Salvataggio annullato. Programma terminato.");
+            return;
+        }
+
+        String filePath = chooser.getSelectedFile().getAbsolutePath();
+        if (!filePath.endsWith(".txt")) {
+            filePath += ".txt";
+        }
+
+        // ArrayList cavalli
         ArrayList<Cavallo> cavalli = new ArrayList<>();
         cavalli.add(new Cavallo("caaanta "));
         cavalli.add(new Cavallo("sannntoni"));
@@ -22,17 +41,18 @@ public class Main {
         cavalli.add(new Cavallo("piciooo"));
 
         boolean garaFinita = false;
-        int passo = 5; // metri per ciclo
+        int passo = 5;
 
-        try (FileWriter writer = new FileWriter("risultato_gara.txt")) {
+        try (FileWriter writer = new FileWriter(filePath)) {
             writer.write("--- INIZIO GARA ---\n\n");
             System.out.println("\n--- INIZIO GARA ---");
 
             while (!garaFinita) {
                 for (Cavallo c : cavalli) {
-                    if (c.isAzzoppato()) continue; // salta se è azzoppato
+                    if (c.isAzzoppato()) continue;
 
-                    // Possibilità 10% che si azzoppi
+                    // 10% di probabilità di azzoppamento
+
                     if (random.nextInt(100) < 10) {
                         c.setAzzoppato(true);
                         String msg = "❌ " + c.getNome() + " si è azzoppato e non può continuare!\n";
@@ -67,6 +87,7 @@ public class Main {
 
             writer.write("\n--- GARA TERMINATA ---\n");
             System.out.println("\n--- GARA TERMINATA ---");
+
         } catch (IOException e) {
             System.out.println("Errore nella scrittura del file: " + e.getMessage());
         }
