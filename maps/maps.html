@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Google Maps App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 24px;
+      margin-right: auto;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input {
+      padding: 12px 15px;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      width: 140px;
+      transition: box-shadow 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    input::placeholder {
+      color: #999;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      background: white;
+      color: #667eea;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+      border-radius: 8px;
+      margin: 15px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .examples {
+      background: white;
+      padding: 15px 20px;
+      border-top: 1px solid #ddd;
+      font-size: 13px;
+      color: #666;
+      text-align: center;
+    }
+
+    .examples a {
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: none;
+      margin: 0 8px;
+      font-weight: 600;
+    }
+
+    .examples a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🗺️ Mappe Interattive</h1>
+    <button id="locateBtn">📍 Posizione attuale</button>
+    <div class="search-group">
+      <input type="number" id="lat" placeholder="Latitudine" step="0.0001" />
+      <input type="number" id="lng" placeholder="Longitudine" step="0.0001" />
+      <button id="loadCoordinates">🔍 Cerca</button>
+    </div>
+  </header>
+  <div id="map"></div>
+  <div class="examples">
+    💡 Esempi: <a onclick="loadExample(41.9028, 12.4964)">Roma</a> | <a onclick="loadExample(45.4642, 9.1900)">Milano</a> | <a onclick="loadExample(43.7102, 10.4061)">Pisa</a> | <a onclick="loadExample(40.8518, 14.2681)">Napoli</a>
+  </div>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    let map;
+
+    function initMap(lat = 41.9028, lng = 12.4964) {
+      const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      
+      // Valida le coordinate
+      if (isNaN(position.lat) || isNaN(position.lng) || position.lat < -90 || position.lat > 90 || position.lng < -180 || position.lng > 180) {
+        alert("Coordinate non valide!");
+        return;
+      }
+
+      // Se la mappa esiste già, la rimuove
+      if (map) {
+        map.remove();
+      }
+
+      // Crea la mappa
+      map = L.map('map').setView([position.lat, position.lng], 14);
+
+      // Aggiunge il layer di OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Aggiunge un marcatore con popup
+      L.marker([position.lat, position.lng])
+        .addTo(map)
+        .bindPopup(`<b>Posizione</b><br>Lat: ${position.lat.toFixed(4)}<br>Lng: ${position.lng.toFixed(4)}`)
+        .openPopup();
+    }
+
+    // Funzione per caricare gli esempi
+    function loadExample(lat, lng) {
+      document.getElementById("lat").value = lat;
+      document.getElementById("lng").value = lng;
+      initMap(lat, lng);
+    }
+
+    // Pulsante localizzazione
+    document.getElementById("locateBtn").addEventListener("click", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          initMap(pos.coords.latitude, pos.coords.longitude);
+          document.getElementById("lat").value = pos.coords.latitude.toFixed(4);
+          document.getElementById("lng").value = pos.coords.longitude.toFixed(4);
+        }, () => alert("Impossibile ottenere la posizione"));
+      } else {
+        alert("Geolocalizzazione non supportata");
+      }
+    });
+
+    // Pulsante cerca coordinate
+    document.getElementById("loadCoordinates").addEventListener("click", () => {
+      const lat = document.getElementById("lat").value;
+      const lng = document.getElementById("lng").value;
+
+      if (!lat || !lng) {
+        alert("Inserisci latitudine e longitudine");
+        return;
+      }
+
+      initMap(lat, lng);
+    });
+
+    // Permette di cercare premendo Invio
+    document.getElementById("lat").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") document.getElementById("loadCoordinates").click();
+    });
+    document.getElementById("lng").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") document.getElementById("loadCoordinates").click();
+    });
+
+    // Inizializza la mappa al caricamento (Roma)
+    initMap();
+  </script>
+</body>
+</html>
